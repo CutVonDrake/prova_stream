@@ -1,50 +1,59 @@
 import streamlit as st
+from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime, timedelta
 
-# Autenticazione
+# Aggiorna ogni secondo
+st_autorefresh(interval=1000, limit=None, key="auto_refresh")
+
+# Setup credenziali Google Sheets
 scope = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_info(
     st.secrets["GSPREAD_CREDS"],
     scopes=scope
 )
-
-# Connessione a Google Sheets
 client = gspread.authorize(creds)
 sheet = client.open_by_key("1wGmd1x0DlCvBppFdnlckXiqPZ1Jagtxrq5aM9-puoMw").sheet1
 
-# Verifica service account
-st.write(f"Service account: {creds.service_account_email}")
+# Funzione per ottenere timestamp da una cella
+def get_timestamp(cell):
+    ts = sheet.acell(cell).value
+    return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
 
-# Leggi la data di inizio dalla cella A1
-start_time_str = sheet.acell("A1").value
-st.write(f"Valore in A1: {start_time_str}")  # utile per il debug
+# Funzione per aggiornare timestamp
+def set_timestamp(cell):
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sheet.update(cell, now_str)
+    st.rerun()
 
-# Parsing della data
-start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+# Recupero timestamp
+last_reset_pizza = get_timestamp("A1")
+last_reset_gelato = get_timestamp("A2")
 
-# Calcola il tempo trascorso
-now = datetime.now()
-delta = now - start_time
-
-# Format del tempo trascorso
-def format_timedelta(td):
-    total_seconds = int(td.total_seconds())
-    days = total_seconds // 86400
-    hours = (total_seconds % 86400) // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
+# Calcolo tempo trascorso
+def elapsed_time(since):
+    delta = datetime.now() - since
+    days = delta.days
+    hours = delta.seconds // 3600
+    minutes = (delta.seconds % 3600) // 60
+    seconds = delta.seconds % 60
     return days, hours, minutes, seconds
 
-days, hours, minutes, seconds = format_timedelta(delta)
+days_p, hours_p, minutes_p, seconds_p = elapsed_time(last_reset_pizza)
+days_g, hours_g, minutes_g, seconds_g = elapsed_time(last_reset_gelato)
 
 # UI
-st.markdown(f"<h1 style='font-size: 48px;'>🍕 Giorni senza pizza: {days}</h1>", unsafe_allow_html=True)
-st.markdown(f"<h2 style='font-size: 36px;'>{hours:02}:{minutes:02}:{seconds:02}</h2>", unsafe_allow_html=True)
+st.title("⏱️ Timer senza...")
 
-# Pulsante per il reset
-if st.button("🔁 Resetta timer"):
-    now_str = now.strftime("%Y-%m-%d %H:%M:%S")
-    sheet.update("A1", now_str)
-    st.rerun()
+st.subheader("😠👊 Tempo senza litigare:")
+st.markdown(f"<h3>Giorni: {days_p:02}</h3>", unsafe_allow_html=True)
+st.markdown(f"<h2>{hours_p:02}:{minutes_p:02}:{seconds_p:02}</h2>", unsafe_allow_html=True)
+if st.button("Resetta litigi"):
+    set_timestamp("A1")
+
+st.subheader("🥰😘 Tempo senza fare l'amore:")
+st.markdown(f"<h3>Giorni: {days_g:02}</h3>", unsafe_allow_html=True)
+st.markdown(f"<h2>{hours_g:02}:{minutes_g:02}:{seconds_g:02}</h2>", unsafe_allow_html=True)
+if st.button("Resetta sesso"):
+    set_timestamp("A2")
