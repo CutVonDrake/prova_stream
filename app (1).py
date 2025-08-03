@@ -28,7 +28,7 @@ if "start_time_litigi" not in st.session_state:
 # Caricamento timer gelato da B1
 if "start_time_gelato" not in st.session_state:
     try:
-        st.session_state.start_time_gelato = load_time_from_sheet("B1")
+        st.session_state.start_time_gelato = load_time_from_sheet("A2")
     except Exception as e:
         st.error(f"Errore nel caricamento del timer gelato: {e}")
         st.stop()
