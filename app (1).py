@@ -52,7 +52,7 @@ def format_delta(td):
 days_l, hours_l, minutes_l, seconds_l = format_delta(delta_litigi)
 days_g, hours_g, minutes_g, seconds_g = format_delta(delta_gelato)
 
-st.markdown(f"<h1>⏳ Giorni senza litigare: {days_l}</h1>", unsafe_allow_html=True)
+st.markdown(f"<h1>😠👊 Giorni senza litigare: {days_l}</h1>", unsafe_allow_html=True)
 st.markdown(f"<h2>{hours_l:02}:{minutes_l:02}:{seconds_l:02}</h2>", unsafe_allow_html=True)
 
 if st.button("🔄 Resetta timer litigi"):
@@ -70,7 +70,7 @@ if st.button("🔄 Resetta timer litigi"):
     except Exception as e:
         st.error(f"Errore nel resettare il timer litigi: {e}")
 
-st.markdown(f"<h1>🍦 Giorni senza gelato: {days_g}</h1>", unsafe_allow_html=True)
+st.markdown(f"<h1>🥰😘 Giorni senza fare l'amore: {days_g}</h1>", unsafe_allow_html=True)
 st.markdown(f"<h2>{hours_g:02}:{minutes_g:02}:{seconds_g:02}</h2>", unsafe_allow_html=True)
 
 if st.button("🔄 Resetta timer gelato"):
