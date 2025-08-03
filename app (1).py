@@ -1,46 +1,49 @@
 import streamlit as st
+import datetime
+import time
 import gspread
-from datetime import datetime, timedelta
-from streamlit_autorefresh import st_autorefresh
+import json
+from oauth2client.service_account import ServiceAccountCredentials
 
-# refresh ogni secondo
-st_autorefresh(interval=1000, key="auto-refresh")
-
-# Autenticazione
-gc = gspread.service_account(filename="service_account.json")
+# Autenticazione con Google Sheets
+creds = json.loads(st.secrets["GSPREAD_CREDS"])
+gc = gspread.service_account_from_dict(creds)
 sh = gc.open("timer_reset")
 worksheet = sh.sheet1
 
-# Funzioni
-def get_timestamp(voce):
-    records = worksheet.get_all_records()
-    for row in records:
-        if row["voce"] == voce:
-            return datetime.fromisoformat(row["timestamp"])
-    return datetime.now()  # fallback se non trova nulla
+# Funzione per ottenere la data di partenza dal foglio
+@st.cache_data(ttl=10)
+def get_start_time():
+    value = worksheet.acell("A1").value
+    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
 
-def reset_timestamp(voce):
-    cell = worksheet.find(voce)
-    worksheet.update_cell(cell.row, 2, datetime.now().isoformat())
+# Funzione per impostare la data di partenza nel foglio
+def set_start_time():
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    worksheet.update("A1", now)
 
+# Funzione per formattare il tempo trascorso
 def format_timedelta(td):
-    days = td.days
-    hours = td.seconds // 3600
-    minutes = (td.seconds % 3600) // 60
-    seconds = td.seconds % 60
+    total_seconds = int(td.total_seconds())
+    days = total_seconds // 86400
+    hours = (total_seconds % 86400) // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
     return days, hours, minutes, seconds
 
-# App
-st.title("⏱️ Timer senza pizza e gelato")
+# Layout Streamlit
+st.title("⏱️ Timer condiviso")
 
-for voce, emoji in [("pizza", "🍕"), ("gelato", "🍦")]:
-    st.subheader(f"{emoji} Tempo senza mangiare {voce}:")
-    last_reset = get_timestamp(voce)
-    elapsed = datetime.now() - last_reset
-    d, h, m, s = format_timedelta(elapsed)
-    st.markdown(f"<h3>Giorni: {d:02}</h3>", unsafe_allow_html=True)
-    st.markdown(f"<h2>{h:02}:{m:02}:{s:02}</h2>", unsafe_allow_html=True)
+# Mostra il tempo trascorso
+start_time = get_start_time()
+now = datetime.datetime.now()
+delta = now - start_time
+days, hours, minutes, seconds = format_timedelta(delta)
 
-    if st.button(f"Resetta {voce}", key=f"reset_{voce}"):
-        reset_timestamp(voce)
-        st.experimental_rerun()
+st.markdown(f"### Giorni: `{days}`")
+st.markdown(f"## {hours:02}:{minutes:02}:{seconds:02}")
+
+# Bottone per resettare
+if st.button("Resetta timer", key="reset"):
+    set_start_time()
+    st.experimental_rerun()
