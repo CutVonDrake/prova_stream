@@ -3,6 +3,10 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, timedelta
 
+files = client.list_spreadsheet_files()
+for f in files:
+    st.write(f['name'])
+
 # Autenticazione
 scope = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_info(
