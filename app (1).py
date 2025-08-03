@@ -54,7 +54,7 @@ if st.button("🔄 Resetta timer"):
         sheet = client.open_by_key("1wGmd1x0DlCvBppFdnlckXiqPZ1Jagtxrq5aM9-puoMw").sheet1
 
         now_str = now_reset.strftime("%Y-%m-%d %H:%M:%S")
-        sheet.update("A1", now_str)
+        sheet.update("A1", [[now_str]])
 
         st.session_state.start_time = now_reset  # aggiorno la session state con il valore corretto
         st.experimental_rerun()
