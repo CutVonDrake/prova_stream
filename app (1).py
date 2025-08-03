@@ -3,10 +3,6 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, timedelta
 
-files = client.list_spreadsheet_files()
-for f in files:
-    st.write(f['name'])
-
 # Autenticazione
 scope = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_info(
@@ -17,6 +13,10 @@ creds = Credentials.from_service_account_info(
 # Connessione a Google Sheets
 client = gspread.authorize(creds)
 sheet = client.open("timer_reset").sheet1
+
+files = client.list_spreadsheet_files()
+for f in files:
+    st.write(f['name'])
 
 # Leggi la data di inizio dalla cella A1
 start_time_str = sheet.acell("A1").value
