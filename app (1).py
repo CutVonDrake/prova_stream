@@ -5,7 +5,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 # Refresh dell'app ogni secondo per aggiornare il timer locale
-count = st_autorefresh(interval=1000, limit=None, key="timer_refresh")
+count = st_autorefresh(interval=10000, limit=None, key="timer_refresh")
 
 # Funzione per inizializzare e caricare la data da Google Sheets una sola volta
 def load_start_time():
