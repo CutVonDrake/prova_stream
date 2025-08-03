@@ -1,59 +1,58 @@
 import streamlit as st
-from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 
-# Aggiorna ogni secondo
-st_autorefresh(interval=1000, limit=None, key="auto_refresh")
+# Refresh dell'app ogni secondo per aggiornare il timer locale
+count = st_autorefresh(interval=1000, limit=None, key="timer_refresh")
 
-# Setup credenziali Google Sheets
-scope = ["https://www.googleapis.com/auth/spreadsheets"]
-creds = Credentials.from_service_account_info(
-    st.secrets["GSPREAD_CREDS"],
-    scopes=scope
-)
-client = gspread.authorize(creds)
-sheet = client.open_by_key("1wGmd1x0DlCvBppFdnlckXiqPZ1Jagtxrq5aM9-puoMw").sheet1
+# Funzione per inizializzare e caricare la data da Google Sheets una sola volta
+def load_start_time():
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    creds = Credentials.from_service_account_info(
+        st.secrets["GSPREAD_CREDS"],
+        scopes=scope
+    )
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key("1wGmd1x0DlCvBppFdnlckXiqPZ1Jagtxrq5aM9-puoMw").sheet1
+    start_time_str = sheet.acell("A1").value
+    start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+    return start_time
 
-# Funzione per ottenere timestamp da una cella
-def get_timestamp(cell):
-    ts = sheet.acell(cell).value
-    return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+# Carica start_time solo se non è già in session_state
+if "start_time" not in st.session_state:
+    try:
+        st.session_state.start_time = load_start_time()
+    except Exception as e:
+        st.error(f"Errore nel caricamento del timer: {e}")
+        st.stop()
 
-# Funzione per aggiornare timestamp
-def set_timestamp(cell):
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sheet.update(cell, now_str)
-    st.rerun()
+# Calcola tempo trascorso localmente
+now = datetime.now()
+delta = now - st.session_state.start_time
 
-# Recupero timestamp
-last_reset_pizza = get_timestamp("A1")
-last_reset_gelato = get_timestamp("A2")
+days = delta.days
+hours = delta.seconds // 3600
+minutes = (delta.seconds % 3600) // 60
+seconds = delta.seconds % 60
 
-# Calcolo tempo trascorso
-def elapsed_time(since):
-    delta = datetime.now() - since
-    days = delta.days
-    hours = delta.seconds // 3600
-    minutes = (delta.seconds % 3600) // 60
-    seconds = delta.seconds % 60
-    return days, hours, minutes, seconds
+st.markdown(f"<h1 style='font-size: 48px;'>⏳ Giorni senza pizza: {days}</h1>", unsafe_allow_html=True)
+st.markdown(f"<h2 style='font-size: 36px;'>{hours:02}:{minutes:02}:{seconds:02}</h2>", unsafe_allow_html=True)
 
-days_p, hours_p, minutes_p, seconds_p = elapsed_time(last_reset_pizza)
-days_g, hours_g, minutes_g, seconds_g = elapsed_time(last_reset_gelato)
-
-# UI
-st.title("⏱️ Timer senza...")
-
-st.subheader("😠👊 Tempo senza litigare:")
-st.markdown(f"<h3>Giorni: {days_p:02}</h3>", unsafe_allow_html=True)
-st.markdown(f"<h2>{hours_p:02}:{minutes_p:02}:{seconds_p:02}</h2>", unsafe_allow_html=True)
-if st.button("Resetta litigi"):
-    set_timestamp("A1")
-
-st.subheader("🥰😘 Tempo senza fare l'amore:")
-st.markdown(f"<h3>Giorni: {days_g:02}</h3>", unsafe_allow_html=True)
-st.markdown(f"<h2>{hours_g:02}:{minutes_g:02}:{seconds_g:02}</h2>", unsafe_allow_html=True)
-if st.button("Resetta sesso"):
-    set_timestamp("A2")
+# Pulsante per resettare il timer, scrive su Google Sheets e aggiorna start_time in session_state
+if st.button("🔄 Resetta timer"):
+    try:
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        creds = Credentials.from_service_account_info(
+            st.secrets["GSPREAD_CREDS"],
+            scopes=scope
+        )
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key("1wGmd1x0DlCvBppFdnlckXiqPZ1Jagtxrq5aM9-puoMw").sheet1
+        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+        sheet.update("A1", now_str)
+        st.session_state.start_time = now  # aggiorna la data in session_state
+        st.experimental_rerun()
+    except Exception as e:
+        st.error(f"Errore nel resettare il timer: {e}")
