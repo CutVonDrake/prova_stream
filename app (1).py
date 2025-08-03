@@ -40,9 +40,11 @@ seconds = delta.seconds % 60
 st.markdown(f"<h1 style='font-size: 48px;'>⏳ Giorni senza pizza: {days}</h1>", unsafe_allow_html=True)
 st.markdown(f"<h2 style='font-size: 36px;'>{hours:02}:{minutes:02}:{seconds:02}</h2>", unsafe_allow_html=True)
 
-# Pulsante per resettare il timer, scrive su Google Sheets e aggiorna start_time in session_state
 if st.button("🔄 Resetta timer"):
     try:
+        # Calcolo il tempo attuale al momento del click
+        now_reset = datetime.now()
+
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
         creds = Credentials.from_service_account_info(
             st.secrets["GSPREAD_CREDS"],
@@ -50,9 +52,12 @@ if st.button("🔄 Resetta timer"):
         )
         client = gspread.authorize(creds)
         sheet = client.open_by_key("1wGmd1x0DlCvBppFdnlckXiqPZ1Jagtxrq5aM9-puoMw").sheet1
-        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        now_str = now_reset.strftime("%Y-%m-%d %H:%M:%S")
         sheet.update("A1", now_str)
-        st.session_state.start_time = now  # aggiorna la data in session_state
+
+        st.session_state.start_time = now_reset  # aggiorno la session state con il valore corretto
         st.experimental_rerun()
     except Exception as e:
         st.error(f"Errore nel resettare il timer: {e}")
+
