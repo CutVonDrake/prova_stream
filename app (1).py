@@ -57,7 +57,6 @@ if st.button("🔄 Resetta timer"):
         sheet.update("A1", [[now_str]])
 
         st.session_state.start_time = now_reset  # aggiorno la session state con il valore corretto
-        st.rerun()
     except Exception as e:
         st.error(f"Errore nel resettare il timer: {e}")
 
