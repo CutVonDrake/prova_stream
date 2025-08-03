@@ -3,24 +3,37 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, timedelta
 
-# Autenticazione
-scope = ["https://www.googleapis.com/auth/spreadsheets"]
+import streamlit as st
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+
+# Scope aggiornati per autorizzare anche Drive
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
 creds = Credentials.from_service_account_info(
     st.secrets["GSPREAD_CREDS"],
     scopes=scope
 )
 
-# Connessione a Google Sheets
 client = gspread.authorize(creds)
-sheet = client.open("timer_reset").sheet1
 
+# Prova a stampare la lista dei file per verificare l'accesso
 files = client.list_spreadsheet_files()
 for f in files:
     st.write(f['name'])
 
-# Leggi la data di inizio dalla cella A1
+# Apri il foglio usando il nome esatto
+sheet = client.open("timer_reset").sheet1
+
 start_time_str = sheet.acell("A1").value
 start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+
+# Il resto del tuo codice...
+
 
 # Calcola il tempo trascorso
 now = datetime.now()
