@@ -73,7 +73,7 @@ if st.button("🔄 Resetta timer litigi"):
 st.markdown(f"<h1>🥰😘 Giorni senza fare l'amore: {days_g}</h1>", unsafe_allow_html=True)
 st.markdown(f"<h2>{hours_g:02}:{minutes_g:02}:{seconds_g:02}</h2>", unsafe_allow_html=True)
 
-if st.button("🔄 Resetta timer gelato"):
+if st.button("🔄 Resetta timer sesso"):
     try:
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
