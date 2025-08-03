@@ -21,4 +21,6 @@ try:
     val = sheet.acell('A1').value
     st.write("Valore in A1:", val)
 except Exception as e:
-    st.error(f"Errore: {e}")
+    import traceback
+    st.error("Errore:")
+    st.code(traceback.format_exc())
