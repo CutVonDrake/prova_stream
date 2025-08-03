@@ -1,43 +1,46 @@
 import streamlit as st
-from datetime import datetime
+import gspread
+from datetime import datetime, timedelta
 from streamlit_autorefresh import st_autorefresh
 
-count = st_autorefresh(interval=1000, limit=None, key="timer")
+# refresh ogni secondo
+st_autorefresh(interval=1000, key="auto-refresh")
 
-def get_last_reset(key):
-    if key not in st.session_state:
-        st.session_state[key] = datetime.now()
-    return st.session_state[key]
+# Autenticazione
+gc = gspread.service_account(filename="service_account.json")
+sh = gc.open("timer_reset")
+worksheet = sh.sheet1
 
-def reset_timer(key):
-    st.session_state[key] = datetime.now()
+# Funzioni
+def get_timestamp(voce):
+    records = worksheet.get_all_records()
+    for row in records:
+        if row["voce"] == voce:
+            return datetime.fromisoformat(row["timestamp"])
+    return datetime.now()  # fallback se non trova nulla
 
-st.title("⏱️ Timer senza...")
+def reset_timestamp(voce):
+    cell = worksheet.find(voce)
+    worksheet.update_cell(cell.row, 2, datetime.now().isoformat())
 
-last_reset_pizza = get_last_reset("pizza")
-elapsed_pizza = datetime.now() - last_reset_pizza
-days_p = elapsed_pizza.days
-hours_p = elapsed_pizza.seconds // 3600
-minutes_p = (elapsed_pizza.seconds % 3600) // 60
-seconds_p = elapsed_pizza.seconds % 60
+def format_timedelta(td):
+    days = td.days
+    hours = td.seconds // 3600
+    minutes = (td.seconds % 3600) // 60
+    seconds = td.seconds % 60
+    return days, hours, minutes, seconds
 
-st.subheader("😠👊 Tempo senza litigare:")
-st.markdown(f"<h3>Giorni: {days_p:02}</h3>", unsafe_allow_html=True)
-st.markdown(f"<h2>{hours_p:02}:{minutes_p:02}:{seconds_p:02}</h2>", unsafe_allow_html=True)
-if st.button("Resetta litigi"):
-    reset_timer("pizza")
-    st.experimental_rerun()
+# App
+st.title("⏱️ Timer senza pizza e gelato")
 
-last_reset_gelato = get_last_reset("gelato")
-elapsed_gelato = datetime.now() - last_reset_gelato
-days_g = elapsed_gelato.days
-hours_g = elapsed_gelato.seconds // 3600
-minutes_g = (elapsed_gelato.seconds % 3600) // 60
-seconds_g = elapsed_gelato.seconds % 60
+for voce, emoji in [("pizza", "🍕"), ("gelato", "🍦")]:
+    st.subheader(f"{emoji} Tempo senza mangiare {voce}:")
+    last_reset = get_timestamp(voce)
+    elapsed = datetime.now() - last_reset
+    d, h, m, s = format_timedelta(elapsed)
+    st.markdown(f"<h3>Giorni: {d:02}</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{h:02}:{m:02}:{s:02}</h2>", unsafe_allow_html=True)
 
-st.subheader("🥰😘 Tempo senza fare l'amore:")
-st.markdown(f"<h3>Giorni: {days_g:02}</h3>", unsafe_allow_html=True)
-st.markdown(f"<h2>{hours_g:02}:{minutes_g:02}:{seconds_g:02}</h2>", unsafe_allow_html=True)
-if st.button("Resetta sesso"):
-    reset_timer("gelato")
-    st.experimental_rerun()
+    if st.button(f"Resetta {voce}", key=f"reset_{voce}"):
+        reset_timestamp(voce)
+        st.experimental_rerun()
