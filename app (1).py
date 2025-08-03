@@ -12,7 +12,7 @@ creds = Credentials.from_service_account_info(
 
 # Connessione a Google Sheets
 client = gspread.authorize(creds)
-sheet = client.open("timer_reset").sheet1  # cambia con il nome reale del foglio
+sheet = client.open("timer_reset").sheet1
 
 # Leggi la data di inizio dalla cella A1
 start_time_str = sheet.acell("A1").value
