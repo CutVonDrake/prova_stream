@@ -1,28 +1,28 @@
 import streamlit as st
-import datetime
-import time
 import gspread
-import json
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
+from datetime import datetime, timedelta
 
-# Autenticazione con Google Sheets
-creds = json.loads(st.secrets["GSPREAD_CREDS"])
-gc = gspread.service_account_from_dict(creds)
-sh = gc.open("timer_reset")
-worksheet = sh.sheet1
+# Autenticazione
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
+creds = Credentials.from_service_account_info(
+    st.secrets["GSPREAD_CREDS"],
+    scopes=scope
+)
 
-# Funzione per ottenere la data di partenza dal foglio
-@st.cache_data(ttl=10)
-def get_start_time():
-    value = worksheet.acell("A1").value
-    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+# Connessione a Google Sheets
+client = gspread.authorize(creds)
+sheet = client.open("timer_reset").sheet1  # cambia con il nome reale del foglio
 
-# Funzione per impostare la data di partenza nel foglio
-def set_start_time():
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    worksheet.update("A1", now)
+# Leggi la data di inizio dalla cella A1
+start_time_str = sheet.acell("A1").value
+start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
 
-# Funzione per formattare il tempo trascorso
+# Calcola il tempo trascorso
+now = datetime.now()
+delta = now - start_time
+
+# Format del tempo trascorso
 def format_timedelta(td):
     total_seconds = int(td.total_seconds())
     days = total_seconds // 86400
@@ -31,19 +31,14 @@ def format_timedelta(td):
     seconds = total_seconds % 60
     return days, hours, minutes, seconds
 
-# Layout Streamlit
-st.title("⏱️ Timer condiviso")
-
-# Mostra il tempo trascorso
-start_time = get_start_time()
-now = datetime.datetime.now()
-delta = now - start_time
 days, hours, minutes, seconds = format_timedelta(delta)
 
-st.markdown(f"### Giorni: `{days}`")
-st.markdown(f"## {hours:02}:{minutes:02}:{seconds:02}")
+# UI
+st.markdown(f"<h1 style='font-size: 48px;'>🍕 Giorni senza pizza: {days}</h1>", unsafe_allow_html=True)
+st.markdown(f"<h2 style='font-size: 36px;'>{hours:02}:{minutes:02}:{seconds:02}</h2>", unsafe_allow_html=True)
 
-# Bottone per resettare
-if st.button("Resetta timer", key="reset"):
-    set_start_time()
-    st.experimental_rerun()
+# Pulsante per il reset
+if st.button("🔁 Resetta timer"):
+    now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    sheet.update("A1", now_str)
+    st.rerun()
