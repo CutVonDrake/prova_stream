@@ -16,7 +16,7 @@ creds = Credentials.from_service_account_info(
 client = gspread.authorize(creds)
 
 # Apri il foglio "timer_reset"
-sheet = client.open("timer_reset").sheet1
+sheet = client.open_by_key("1wGmd1x0DlCvBppFdnlckXiqPZ1Jagtxrq5aM9-puoMw").sheet1
 
 # Leggi la data/ora dalla cella A1
 start_time_str = sheet.acell("A1").value
